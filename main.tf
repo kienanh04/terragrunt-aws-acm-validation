@@ -18,6 +18,7 @@ locals {
 //            Certs              //
 ///////////////////////////////////
 data "aws_route53_zone" "cert" {
+  count        = "${var.route53_verify ? 1 : 0}"
   name         = "${var.domain_name}"
   private_zone = false
 }
@@ -30,15 +31,18 @@ resource "aws_acm_certificate" "cert" {
 }
 
 resource "aws_route53_record" "cert_validation" {
+  count   = "${var.route53_verify ? 1 : 0}"
   name    = "${aws_acm_certificate.cert.domain_validation_options.0.resource_record_name}"
   type    = "${aws_acm_certificate.cert.domain_validation_options.0.resource_record_type}"
-  zone_id = "${data.aws_route53_zone.cert.id}"
+  #zone_id = "${data.aws_route53_zone.cert.id}"
+  zone_id = "${element(flatten(coalescelist(data.aws_route53_zone.cert.*.id,list())),0)}"
   records = ["${aws_acm_certificate.cert.domain_validation_options.0.resource_record_value}"]
   ttl     = 60
   allow_overwrite   = true
 }
 
 resource "aws_acm_certificate_validation" "cert" {
+  count   = "${var.route53_verify ? 1 : 0}"
   certificate_arn         = "${aws_acm_certificate.cert.arn}"
-  validation_record_fqdns = ["${aws_route53_record.cert_validation.fqdn}"]
+  validation_record_fqdns = ["${aws_route53_record.cert_validation.*.fqdn}"]
 }

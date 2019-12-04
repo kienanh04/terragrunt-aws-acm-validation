@@ -7,6 +7,7 @@ variable "aws_profile" { default = "default" }
 
 variable "domain_name" { default = "example.com" }
 variable "cdn_cert" { default = false }
+variable "route53_verify" { default = true }
 
 variable "tags" {
   default = {}
